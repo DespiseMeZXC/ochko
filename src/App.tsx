@@ -4,6 +4,7 @@ import { Table } from './components/Table/Table'
 import { Deck, Card } from './utils/deck'
 import { calculateScore } from './utils/calculateScore'
 import { Modal } from './components/Modal/Modal'
+import { BetDialog } from './components/BetDialog/BetDialog'
 
 function App() {
   const [deck, setDeck] = useState(() => new Deck());
@@ -18,9 +19,13 @@ function App() {
   const [dealingCards, setDealingCards] = useState<boolean>(true);
   const [lastPlayerCardIndex, setLastPlayerCardIndex] = useState<number>(-1);
   const [lastDealerCardIndex, setLastDealerCardIndex] = useState<number>(-1);
+  const [balance, setBalance] = useState<number>(5000);
+  const [currentBet, setCurrentBet] = useState<number>(0);
+  const [isBetPlaced, setIsBetPlaced] = useState<boolean>(false);
 
   useEffect(() => {
-    initialDeal();
+    // Убираем автоматический старт игры
+    // initialDeal();
   }, []);
 
   useEffect(() => {
@@ -127,9 +132,42 @@ function App() {
     }
   };
 
+  const handleBetPlaced = (amount: number): boolean => {
+    if (amount <= 0 || amount > balance) {
+      return false;
+    }
+
+    setBalance(prev => prev - amount);
+    setCurrentBet(amount);
+    setIsBetPlaced(true);
+    initialDeal();
+    return true;
+  };
+
+  const startNewGame = () => {
+    setBalance(5000);
+    setCurrentBet(0);
+    setIsBetPlaced(false);
+  };
+
   const endGame = (result: 'player' | 'dealer' | 'tie') => {
     setWinner(result);
     setGameOver(true);
+
+    // Обновляем баланс в зависимости от результата
+    if (result === 'player') {
+      setBalance(prev => prev + currentBet * 2); // Выигрыш x2
+    } else if (result === 'tie') {
+      setBalance(prev => prev + currentBet); // Возврат ставки при ничьей
+    }
+    // При проигрыше ставка уже снята с баланса
+  };
+
+  const handlePlayAgain = () => {
+    setIsBetPlaced(false);
+    setCurrentBet(0);
+    setGameOver(false);
+    setWinner(null);
   };
 
   const stand = () => {
@@ -149,26 +187,43 @@ function App() {
       backgroundColor: '#1a1a1a',
       padding: '20px'
     }}>
-      <Table 
-        dealerScore={dealerScore} 
-        playerScore={playerScore}
-        dealerCards={dealerCards}
-        playerCards={playerCards}
-        isBust={isBust}
-        isStand={isStand}
-        winner={winner}
-        dealingCards={dealingCards}
-        lastPlayerCardIndex={lastPlayerCardIndex}
-        lastDealerCardIndex={lastDealerCardIndex}
-        onDraw={drawCard}
-        onStand={stand}
-        gameOver={gameOver}
-      />
-      <Modal 
-        isOpen={gameOver} 
-        winner={winner} 
-        onPlayAgain={initialDeal}
-      />
+      {!isBetPlaced ? (
+        <BetDialog 
+          balance={balance}
+          onBetPlaced={handleBetPlaced}
+          onStartNewGame={startNewGame}
+        />
+      ) : (
+        <>
+          <div style={{
+            color: 'white',
+            fontSize: '20px',
+            marginBottom: '20px'
+          }}>
+            Баланс: {balance} | Ставка: {currentBet}
+          </div>
+          <Table 
+            dealerScore={dealerScore} 
+            playerScore={playerScore}
+            dealerCards={dealerCards}
+            playerCards={playerCards}
+            isBust={isBust}
+            isStand={isStand}
+            winner={winner}
+            dealingCards={dealingCards}
+            lastPlayerCardIndex={lastPlayerCardIndex}
+            lastDealerCardIndex={lastDealerCardIndex}
+            onDraw={drawCard}
+            onStand={stand}
+            gameOver={gameOver}
+          />
+          <Modal 
+            isOpen={gameOver} 
+            winner={winner} 
+            onPlayAgain={handlePlayAgain}
+          />
+        </>
+      )}
     </div>
   );
 }

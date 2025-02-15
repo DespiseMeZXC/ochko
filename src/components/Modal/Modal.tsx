@@ -14,11 +14,11 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, winner, onPlayAgain }) => 
     <div className={styles.overlay}>
       <div className={styles.modal}>
         <h2>
-          {winner === 'player' && 'Вы выиграли!'}
+          {winner === 'player' && 'Вы выиграли! (x2)'}
           {winner === 'dealer' && 'Дилер выиграл!'}
-          {winner === 'tie' && 'Ничья!'}
+          {winner === 'tie' && 'Ничья! (возврат ставки)'}
         </h2>
-        <button onClick={onPlayAgain}>Играть снова</button>
+        <button onClick={onPlayAgain}>Сделать новую ставку</button>
       </div>
     </div>
   );
